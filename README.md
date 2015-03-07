@@ -1,5 +1,5 @@
 # rucm
-## Implementation of Unobserved Components Models (UCM) in R ##
+### Implementation of Unobserved Components Models (UCM) in R ###
 
 ### Description
 Unobserved Components Models (introduced in Harvey, A. (1989), Forecasting, structural time series models and the Kalman filter, Cambridge New York: Cambridge University Press) decomposes a time series into components such as trend, seasonal, cycle, and the regression effects due to predictor series which captures the salient features of the series to predict its behavior.
@@ -12,6 +12,9 @@ Unobserved Components Models (introduced in Harvey, A. (1989), Forecasting, stru
 ### Work-in-progress
 * Implement time-varying independent variable estimation.
 * Update `predict.ucm()` to use argument `newdata` for causal forecasting.
+
+### Issues
+Issues can be reported [here](https://github.com/kaushikrch/rucm/issues).
 
 ### Package News
 #### rucm v0.4 
