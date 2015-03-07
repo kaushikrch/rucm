@@ -1,0 +1,19 @@
+Package: rucm
+Type: Package
+Title: Implementation of Unobserved Components Model (UCM) in R
+Version: 0.4
+Date: 2014-09-06
+Author: Kaushik Roy Chowdhury
+Maintainer: Kaushik Roy Chowdhury <kaushikrch@gmail.com>
+Description: Unobserved Components Models (introduced in Harvey, A. (1989),
+    Forecasting, structural time series models and the Kalman filter, Cambridge
+    New York: Cambridge University Press) decomposes a time series into
+    components such as trend, seasonal, cycle, and the regression effects due
+    to predictor series which captures the salient features of the series to
+    predict its behavior.
+License: GPL (>= 2)
+Depends:
+    KFAS
+VignetteBuilder: knitr
+Suggests:
+    knitr

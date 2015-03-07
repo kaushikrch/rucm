@@ -1,0 +1,14 @@
+rucm v0.4 
+==============
+
+Changes:
+
+* Changes in S3 method of printing an UC model. Added p - values for estimates of predictor variables.
+* Added a vignette "Unobserved Components Model in R".
+* Submitted to CRAN on 2014-09-06.
+
+rucm v0.3
+==============
+
+* First submitted to CRAN on 2014-08-25.
+
