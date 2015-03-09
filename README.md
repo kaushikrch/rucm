@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/kaushikrch/rucm.svg?branch=master)](https://travis-ci.org/kaushikrch/rucm)
 # rucm
 ### Implementation of Unobserved Components Models (UCM) in R ###
 
