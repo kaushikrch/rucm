@@ -8,8 +8,6 @@
 #'@name ucm
 #'@param formula an object of class \code{formula} containing the symbolic description of the model with dependent and independent terms. If there are no independent terms, replace rhs with 0. 
 #'@param data a required data frame or list containing variables in the model.
-#'@param random.beta logical; if time varying independent variables are to be included in the model. Defaults to \code{FALSE}.
-#'@param beta.var value to fix variance of time time varying independent variables.
 #'@param irregular logical; if irregular component is to be included in the model. Defaults to \code{TRUE}.
 #'@param irregular.var value to fix variance of irregular component.
 #'@param level logical; if level is to be included in the model. Defaults to \code{TRUE}.
@@ -51,132 +49,147 @@
 #'modelNile$s.level
 #'@export
 #'
-ucm <- function(formula, data, random.beta = FALSE, beta.var = NA, irregular = TRUE, irregular.var = NA, level = TRUE, level.var = NA, slope = FALSE, slope.var = NA, season = FALSE, season.length = NA, season.var = NA, cycle = FALSE, cycle.period = NA, cycle.var = NA){
-
-  if(missing(data)) stop("Data required")
-  if(!(level) && slope) stop("Level to be included to have slope")
-  if(season && is.na(season.length)) stop("Specify season length")
-  if(cycle && is.na(cycle.period)) stop("Specify cycle period")
-  
-  # Creating formula for SSModel
-  if(irregular) H <- irregular.var
-  if(level){
-    comp_trend <- deparse(substitute(SSMtrend(degree = degree, Q = Q), list(degree = 1, Q = level.var)))
-  }
-  if(slope){
-    comp_trend <- deparse(substitute(SSMtrend(degree = degree, Q = Q), list(degree = 2, Q = list(level.var, slope.var))))
-  }
-  if(season){
-    comp_sea <- deparse(substitute(SSMseasonal(period = period, Q = Q), list(period = season.length, Q = season.var)))
-  }
-  if(cycle){
-    comp_cyc <- deparse(substitute(SSMcycle(period = period, Q = Q), list(period = cycle.period, Q = cycle.var)))
-  }
-
-  all_terms <- terms(formula)
-  indep.var <- attr(all_terms, "term.labels")
-  if(random.beta){
-    comp_beta <- deparse(substitute(SSMregression(rformula = rformula, Q = Q, data = data), list(rformula = as.formula(paste( "~-1",paste(indep.var, collapse = "+"), sep = "+")), Q = beta.var)))
-#     comp_beta <- deparse(substitute(SSMregression(rformula = rformula), Q = Q, data = data), list(rformula = (paste(paste(indep.var, collapse = "+"), "~-1", sep = "+")), Q = beta.var)))
-  }
-  
-  dep.var <- all_terms[[2]]
-  comp <- "0"
-  if(length(indep.var) > 0 && !(random.beta)) comp <- paste(indep.var, collapse = "+")
-  if(exists("comp_trend")) comp <- paste(comp, comp_trend, sep = "+")
-  if(exists("comp_sea")) comp <- paste(comp, comp_sea, sep = "+")
-  if(exists("comp_cyc")) comp <- paste(comp, comp_cyc, sep = "+")
-  if(exists("comp_beta")) comp <- paste(comp, comp_beta, sep = "+")
-  
-  ssm.formula <- paste0(dep.var, "~", comp)
-  # Specify inits
-  init.times <- 1
-  if(irregular) init.times <- init.times + 1
-  if(level) init.times <- init.times + 1
-  if(slope) init.times <- init.times + 1
-  if(season) init.times <- init.times + 1
-  if(cycle) init.times <- init.times + 2
-  if(random.beta) init.times <- init.times + length(indep.var)
-
-  if(is.null(rownames(data))) parm <- log(var(data))
-  else parm <- log(var(data[,as.character(dep.var)]))
-  inits <- rep(parm, times = init.times)
-  
-  # Model building
-  if(irregular) modelH <- SSModel(as.formula(ssm.formula), H = H, data = data)
-  else modelH <- SSModel(as.formula(ssm.formula), data = data)
-  modelH <- fitSSM(inits = inits, model = modelH, method='BFGS')$model
-  out <- KFS(modelH, filtering = "state", smoothing = "state")
-  
- # Saving model results
-  # Save estimates
- irr.var <- modelH$H
- names(irr.var) <- "Irregular_Variance"
- if(length(indep.var) > 0){
-   find.indep.var <- match(indep.var, rownames(modelH$T))
-   est <- out$alphahat[nrow(out$alphahat), find.indep.var]
-   se <- sapply(find.indep.var, function(x) mean(sqrt(out$V[x, x, ])))
- } else{ 
-   est <- NULL
-   se <- NULL
- }
- if(random.beta){
-   random.est <- out$alphahat[, find.indep.var]
-   vs.beta <- out$V[find.indep.var, find.indep.var, ]
-   est.beta.var <- modelH$Q[find.indep.var, find.indep.var, ]
-   names(est.beta.var) <- "Beta_Variance" 
- } else{
-   random.est <- NULL; vs.beta <- NULL; est.beta.var <- NULL;
- }
- if(level){
-   find.level <- match("level", rownames(modelH$T))
-   s.level <- out$alphahat[,find.level]
-   vs.level <- out$V[find.level, find.level, ]
-   est.var.level <- modelH$Q[find.level-length(indep.var), find.level-length(indep.var), ]
-   names(est.var.level) <- "Level_Variance"
- } else{
-   s.level <- NULL; vs.level <- NULL; est.var.level <- NULL
- }
- if(slope){
-   find.slope <- match("slope", rownames(modelH$T))
-   s.slope <- out$alphahat[,find.slope]
-   vs.slope <- out$V[find.slope, find.slope, ]
-   est.var.slope <- modelH$Q[find.slope-length(indep.var), find.slope-length(indep.var), ]
-   names(est.var.slope) <- "Slope_Variance"
- } else{
-   s.slope <- NULL; vs.slope <- NULL; est.var.slope <- NULL
- }
- if(season){
-   find.season <- match("sea_dummy1", rownames(modelH$T))
-   s.season <- out$alphahat[,find.season]
-   vs.season <- out$V[find.season, find.season, ]
-   est.var.season <- modelH$Q[find.season-length(indep.var), find.season-length(indep.var), ]
-   names(est.var.season) <- "Season_Variance"
- } else{
-   s.season <- NULL; vs.season <- NULL; est.var.season <- NULL
- }
- if(cycle){
-   find.cycle <- match("cycle", rownames(modelH$T))
-   s.cycle <- out$alphahat[,find.cycle]
-   vs.cycle <- out$V[find.cycle, find.cycle, ]
-   est.var.cycle <- modelH$Q[find.cycle-length(indep.var), find.cycle-length(indep.var), ]
-   names(est.var.cycle) <- "Cycle_Variance"
- } else{
-   s.cycle <- NULL; vs.cycle <- NULL; est.var.cycle <- NULL
- }
- if(is.ts(data)){
-   df <- length(data)-length(indep.var)
-   } else df <- nrow(data)-length(indep.var)
- 
- mc <- match.call(expand.dots = TRUE)
- 
- res.out <- list(est = est, random.est = random.est, est.beta.var = est.beta.var, irr.var = irr.var, est.var.level = est.var.level, est.var.slope = est.var.slope, est.var.season = est.var.season, est.var.cycle = est.var.cycle, s.level = s.level, s.slope = s.slope, s.season = s.season, s.cycle = s.cycle, vs.beta = vs.beta, vs.level = vs.level, vs.slope = vs.slope, vs.season = vs.season, vs.cycle = vs.cycle)
-
- res.out$call <- mc
- res.out$model <- modelH
- class(res.out) <- "ucm"
- attr(res.out, "se") <- se
- attr(res.out,"df") <- df
- invisible(res.out)
+ucm <- function (formula, data, irregular = TRUE, irregular.var = NA, 
+    level = TRUE, level.var = NA, slope = FALSE, slope.var = NA, 
+    season = FALSE, season.length = NA, season.var = NA, cycle = FALSE, 
+    cycle.period = NA, cycle.var = NA) 
+{
+    if (missing(data)) 
+        stop("Data required")
+    if (!(level) && slope) 
+        stop("Level to be included to have slope")
+    if (season && is.na(season.length)) 
+        stop("Specify season length")
+    if (cycle && is.na(cycle.period)) 
+        stop("Specify cycle period")
+    if (irregular) 
+        H <- irregular.var
+    if (level) {
+        comp_trend <- deparse(substitute(SSMtrend(degree = degree, 
+            Q = Q), list(degree = 1, Q = level.var)))
+    }
+    if (slope) {
+        comp_trend <- deparse(substitute(SSMtrend(degree = degree, 
+            Q = Q), list(degree = 2, Q = list(level.var, slope.var))))
+    }
+    if (season) {
+        comp_sea <- deparse(substitute(SSMseasonal(period = period, 
+            Q = Q), list(period = season.length, Q = season.var)))
+    }
+    if (cycle) {
+        comp_cyc <- deparse(substitute(SSMcycle(period = period, 
+            Q = Q), list(period = cycle.period, Q = cycle.var)))
+    }
+    all_terms <- terms(formula)
+    indep.var <- attr(all_terms, "term.labels")
+    dep.var <- all_terms[[2]]
+    comp <- "0"
+    if (length(indep.var) > 0) 
+        comp <- paste(indep.var, collapse = "+")
+    if (exists("comp_trend")) 
+        comp <- paste(comp, comp_trend, sep = "+")
+    if (exists("comp_sea")) 
+        comp <- paste(comp, comp_sea, sep = "+")
+    if (exists("comp_cyc")) 
+        comp <- paste(comp, comp_cyc, sep = "+")
+    ssm.formula <- paste0(dep.var, "~", comp)
+    init.times <- 1
+    if (irregular) 
+        init.times <- init.times + 1
+    if (level) 
+        init.times <- init.times + 1
+    if (slope) 
+        init.times <- init.times + 1
+    if (season) 
+        init.times <- init.times + 1
+    if (cycle) 
+        init.times <- init.times + 2
+    if (is.null(rownames(data))) 
+        parm <- log(var(data))
+    else parm <- log(var(data[, as.character(dep.var)]))
+    inits <- rep(parm, times = init.times)
+    if (irregular) 
+        modelH <- SSModel(as.formula(ssm.formula), H = H, data = data)
+    else modelH <- SSModel(as.formula(ssm.formula), data = data)
+    modelH <- fitSSM(inits = inits, model = modelH, method = "BFGS")$model
+    out <- KFS(modelH, filtering = "state", smoothing = "state")
+    irr.var <- modelH$H
+    names(irr.var) <- "Irregular_Variance"
+    if (length(indep.var) > 0) {
+        find.indep.var <- match(indep.var, rownames(modelH$T))
+        est <- out$alphahat[nrow(out$alphahat), find.indep.var]
+        se <- sapply(find.indep.var, function(x) mean(sqrt(out$V[x, 
+            x, ])))
+    }
+    else {
+        est <- NULL
+        se <- NULL
+    }
+    if (level) {
+        find.level <- match("level", rownames(modelH$T))
+        s.level <- out$alphahat[, find.level]
+        vs.level <- out$V[find.level, find.level, ]
+        est.var.level <- modelH$Q[find.level - length(indep.var), 
+            find.level - length(indep.var), ]
+        names(est.var.level) <- "Level_Variance"
+    }
+    else {
+        s.level <- NULL
+        vs.level <- NULL
+        est.var.level <- NULL
+    }
+    if (slope) {
+        find.slope <- match("slope", rownames(modelH$T))
+        s.slope <- out$alphahat[, find.slope]
+        vs.slope <- out$V[find.slope, find.slope, ]
+        est.var.slope <- modelH$Q[find.slope - length(indep.var), 
+            find.slope - length(indep.var), ]
+        names(est.var.slope) <- "Slope_Variance"
+    }
+    else {
+        s.slope <- NULL
+        vs.slope <- NULL
+        est.var.slope <- NULL
+    }
+    if (season) {
+        find.season <- match("sea_dummy1", rownames(modelH$T))
+        s.season <- out$alphahat[, find.season]
+        vs.season <- out$V[find.season, find.season, ]
+        est.var.season <- modelH$Q[find.season - length(indep.var), 
+            find.season - length(indep.var), ]
+        names(est.var.season) <- "Season_Variance"
+    }
+    else {
+        s.season <- NULL
+        vs.season <- NULL
+        est.var.season <- NULL
+    }
+    if (cycle) {
+        find.cycle <- match("cycle", rownames(modelH$T))
+        s.cycle <- out$alphahat[, find.cycle]
+        vs.cycle <- out$V[find.cycle, find.cycle, ]
+        est.var.cycle <- modelH$Q[match(1, modelH$R[find.cycle, ,1]), match(1, modelH$R[find.cycle, ,1]), ]
+        names(est.var.cycle) <- "Cycle_Variance"
+    }
+    else {
+        s.cycle <- NULL
+        vs.cycle <- NULL
+        est.var.cycle <- NULL
+    }
+    if (is.ts(data)) {
+        df <- length(data) - length(indep.var)
+    }
+    else df <- nrow(data) - length(indep.var)
+    mc <- match.call(expand.dots = TRUE)
+    res.out <- list(est = est, irr.var = irr.var, est.var.level = est.var.level, 
+        est.var.slope = est.var.slope, est.var.season = est.var.season, 
+        est.var.cycle = est.var.cycle, s.level = s.level, s.slope = s.slope, 
+        s.season = s.season, s.cycle = s.cycle, vs.level = vs.level, 
+        vs.slope = vs.slope, vs.season = vs.season, vs.cycle = vs.cycle)
+    res.out$call <- mc
+    res.out$model <- modelH
+    class(res.out) <- "ucm"
+    attr(res.out, "se") <- se
+    attr(res.out, "df") <- df
+    invisible(res.out)
 }
-
