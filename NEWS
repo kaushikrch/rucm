@@ -1,3 +1,11 @@
+
+rucm v0.6.1 
+==============
+
+Changes:
+
+* Add a tolerance parameter for the state space model used in ucm()
+
 rucm v0.4 
 ==============
 

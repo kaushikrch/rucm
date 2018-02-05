@@ -18,6 +18,12 @@ Unobserved Components Models (introduced in Harvey, A. (1989), Forecasting, stru
 Issues can be reported [here](https://github.com/kaushikrch/rucm/issues).
 
 ### Package News
+
+#### rucm v0.6.1 
+Changes:
+
+* Add a tolerance parameter for the state space model used in ucm()
+
 #### rucm v0.4 
 Changes:
 
