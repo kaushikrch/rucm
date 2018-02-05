@@ -20,6 +20,11 @@
 #'@param cycle logical; if cyclical component is to be included in the model. Defaults to \code{FALSE}.
 #'@param cycle.period length of cyclical component. Required when \code{cycle} is included. 
 #'@param cycle.var value to fix variance of cyclical component.
+#'@param tol Used by \code{KFAS::SSModel}. A tolerance parameter used in
+#'  checking whether Finf or F is numerically zero. Defaults to
+#'  .Machine$double.eps^0.5. If smoothing gives negative variances for smoothed
+#'  states, try adjusting this.
+#'
 #'
 #'@details Formula of the model can be of the forma as in \code{lm} with response variable on rhs and predictor variables or 0 (if no predictor variables) on the rhs. 
 #'
@@ -49,11 +54,23 @@
 #'modelNile$s.level
 #'@export
 #'
-ucm <- function (formula, data, irregular = TRUE, irregular.var = NA, 
-    level = TRUE, level.var = NA, slope = FALSE, slope.var = NA, 
-    season = FALSE, season.length = NA, season.var = NA, cycle = FALSE, 
-    cycle.period = NA, cycle.var = NA) 
-{
+ucm <- function (
+  formula, 
+  data, 
+  irregular     = TRUE, 
+  irregular.var = NA, 
+  level         = TRUE, 
+  level.var     = NA, 
+  slope         = FALSE, 
+  slope.var     = NA, 
+  season        = FALSE, 
+  season.length = NA, 
+  season.var    = NA, 
+  cycle         = FALSE, 
+  cycle.period  = NA, 
+  cycle.var     = NA,
+  tol           = .Machine$double.eps^0.5
+) {
     if (missing(data)) 
         stop("Data required")
     if (!(level) && slope) 
@@ -109,8 +126,8 @@ ucm <- function (formula, data, irregular = TRUE, irregular.var = NA,
     else parm <- log(var(data[, as.character(dep.var)]))
     inits <- rep(parm, times = init.times)
     if (irregular) 
-        modelH <- SSModel(as.formula(ssm.formula), H = H, data = data)
-    else modelH <- SSModel(as.formula(ssm.formula), data = data)
+        modelH <- SSModel(as.formula(ssm.formula), H = H, data = data, tol = tol)
+    else modelH <- SSModel(as.formula(ssm.formula), data = data, tol = tol)
     modelH <- fitSSM(inits = inits, model = modelH, method = "BFGS")$model
     out <- KFS(modelH, filtering = "state", smoothing = "state")
     irr.var <- modelH$H
