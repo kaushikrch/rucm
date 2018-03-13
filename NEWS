@@ -1,4 +1,11 @@
 
+rucm v0.6.2
+==============
+
+Changes:
+
+* Update `predict.ucm()` to use argument `newdata` for causal forecasting.
+
 rucm v0.6.1 
 ==============
 
