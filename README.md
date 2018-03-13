@@ -1,7 +1,6 @@
-[![Build Status](https://travis-ci.org/kaushikrch/rucm.svg?branch=master)](https://travis-ci.org/kaushikrch/rucm)
-
 # rucm
 
+[![Build Status](https://travis-ci.org/kaushikrch/rucm.svg?branch=master)](https://travis-ci.org/kaushikrch/rucm)
 [![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/rucm)](http://cran.r-project.org/package=rucm)
 
 ### Implementation of Unobserved Components Models (UCM) in R ###
@@ -21,15 +20,12 @@ install.packages("rucm")
 devtools::install_github("kaushikrch/rucm")
 ```
 
-### Comments
-
-* A stable version is available for download on [CRAN](http://cran.r-project.org/web/packages/rucm/index.html). 
-* Package vignette can be found [here](http://cran.r-project.org/web/packages/rucm/vignettes/rucm_vignettes.html).
-
-
-### Issues / work in progress
-
 Issues can be reported [here](https://github.com/kaushikrch/rucm/issues).
+
+### Vignette
+
+Package vignette can be found [here](http://cran.r-project.org/web/packages/rucm/vignettes/rucm_vignettes.html).
+
 
 ### Package News
 
@@ -46,6 +42,7 @@ Changes:
 * Add a tolerance parameter for the state space model used in `ucm()`
 
 #### rucm v0.4 
+
 Changes:
 
 * Changes in S3 method of printing an UC model. Added p - values for estimates of predictor variables.
@@ -53,6 +50,7 @@ Changes:
 * Submitted to CRAN on 2014-09-06.
 
 #### rucm v0.3
+
 * First submitted to CRAN on 2014-08-25.
 
 
