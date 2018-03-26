@@ -4,12 +4,18 @@
 \alias{predict.ucm}
 \title{Unobserved Components Model Predictions}
 \usage{
-\method{predict}{ucm}(object, n.ahead, ...)
+\method{predict}{ucm}(object, n.ahead, newdata, ...)
 }
 \arguments{
-\item{object}{an object of class \code{SSModel} which can be retrieved from \code{$model} call of an object of class \code{ucm}.}
+\item{object}{an object of class \code{SSModel} which can be retrieved from
+\code{$model} call of an object of class \code{ucm}.}
 
 \item{n.ahead}{number of points for which forecasts are to generated.}
+
+\item{newdata}{A compatible dataframe to be added in the end of the old
+object for which the predictions are required. If omitted, predictions are
+either for the past data points, or if argument n.ahead is given, n.ahead
+time steps ahead.}
 
 \item{\dots}{ignored.}
 }
@@ -17,7 +23,10 @@
 A matrix or list of matrices containing the predictions.
 }
 \description{
-Function \code{predict.ucm} predicts the future observations of an Unobserved Components Model. The \code{ucm} function returns an object \code{model} of class \code{SSModel} which is then further used in \code{predict.SSModel}.
+Function \code{predict.ucm} predicts the future observations of
+ an Unobserved Components Model. The \code{ucm} function returns an object
+ \code{model} of class \code{SSModel} which is then further used in
+ \code{predict.SSModel}.
 }
 \examples{
 modelNile <- ucm(Nile~0, data = Nile, slope = TRUE)
